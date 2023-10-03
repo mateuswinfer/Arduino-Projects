@@ -1,0 +1,163 @@
+#include <HCSR04.h>
+#include <Servo.h>
+
+Servo myservo;
+
+
+UltraSonicDistanceSensor distanceSensor(2, 4);  // Initialize sensor that uses digital pins 2 and 4.
+
+
+
+
+#define forward analogWrite(IN4, Fvar);
+#define backward analogWrite(IN3, Bvar);
+#define Vdir  myservo.write(10);  
+#define Vfren  myservo.write(85); 
+#define Vesq  myservo.write(170); 
+//#define turnleft analogWrite(IN1,speed);
+//#define turnright analogWrite(IN2,speed);
+
+
+// Definitions of Arduino pins connected to the H-Bridge inputs
+const int IN1 = 9;  // Left
+const int IN2 = 3;  // Right
+const int IN3 = 10; // Backward
+const int IN4 = 11; // Forward
+const int SensR = A2;
+const int SensL = A3;
+
+
+
+//  ____________Variaveis Globais________________
+
+ bool sensorRe = true;
+ short Fvar,Bvar = 80;
+ int Amedir[16];
+ int mediu,speed = 0;
+ int pos = 0;
+ bool D,F,E = false;
+ bool R,L,U = false; //Right - Direita, Left - Esquerda, U - Frente
+// ___________Diretivas do copilador _______________
+
+
+
+
+void setup()
+{
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+  pinMode(A1, OUTPUT); // Pino que acende os Farois
+  //pinMode(lerPortaSensorRe, INPUT);  // Pino de sensor traseiro 
+  pinMode(A2,INPUT);
+  pinMode(A3,INPUT);  // Pino que sensor de luminosidade
+  Serial.begin(9600);
+  myservo.attach(5);
+
+
+}
+
+  void loop()
+  {
+    turnLeft();
+  }
+
+void Scanner()
+{
+  int esquerda,frente,direita = 0;
+  Vdir;
+  medir();
+  direita = mediu;
+  Vfren;
+  medir();
+  frente = mediu;
+  Vesq;
+  medir();
+  esquerda = mediu;
+
+
+    /* if(direita > frente && direita > esquerda && !D ){          //  Vira para direita
+        Serial.println("Virei direita");
+         analogWrite(IN2,100);
+         delay(80);
+        D= true;
+        E= false;
+        F= false;
+      }
+      
+          else if(frente > esquerda && frente > direita ){        // Virar frente
+            Serial.println("Virei pra frente");
+            D= false;
+            E= false;
+            F= true;
+          }
+              else if(esquerda > direita && esquerda > frente){                //
+                Serial.println("Virei pra esquerda");
+                D= false;
+                E= true;
+                F= false;
+              }
+
+                if(E || F){ // quero ir direita
+                 
+                }
+                    else if(F || D){ // quero ir esquerda
+                      analogWrite(IN3,100);
+                      delay(100);
+                    }
+*/
+
+  }
+
+void farol()
+{
+  int led = analogRead(SensL);
+  if(led >= 900){
+    digitalWrite(A1,HIGH);
+  }
+  else{
+    digitalWrite(A1,LOW);
+  }
+}
+
+
+int medir(){
+
+int s = 0;
+int x, Stotal = 0;
+mediu = 0;
+ for (x =0;x<15;x++ ){
+   s = distanceSensor.measureDistanceCm(); 
+  Amedir[x] = s;
+  delay(100);
+ }
+
+for(x=0; x<15;x++){
+Stotal  = Stotal + Amedir[x];
+}
+ mediu = (Stotal/15);
+Serial.println(mediu);
+return mediu;
+}
+
+void turnLeft()
+{
+
+  speed = 100;
+  digitalWrite(IN1,HIGH);
+  L = true;
+  delay(300);
+  neutro();
+  
+
+Serial.println(L);
+}
+void neutro(){
+  digitalWrite(IN1,LOW);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,LOW);
+  digitalWrite(IN4,LOW);
+
+}
+

@@ -1,0 +1,369 @@
+//Programa : Controle 2 motores DC usando Ponte H L298N
+//Autor : Marcos
+//Data: 19/09/2021
+//Definicoes pinos Arduino ligados a entrada da Ponte H
+
+#include <HCSR04.h>
+#include <Servo.h>
+#include <EEPROM.h>
+
+Servo myservo;  // create servo object to control a servo
+UltraSonicDistanceSensor distanceSensor(2, 4);  // Initialize sensor that uses digital pins 2 and 4.
+
+
+int IN1 = 3;       // direcao
+int IN2 = 9;       // direcao
+int IN3 = 10;      // frente-re
+int IN4 = 11;      // frente-re
+
+//*******************Prototipo de funçoes ******************************************
+void AndaFrente();
+void ViraDireita();
+void ViraEsquerda();
+void AndaTras();
+void Freio();
+void scan();
+void viraDireita45();
+void viraEsquerda45();
+void virafrente();
+void initdirecao();
+
+//***************** Variaveis Globais *******************************************
+
+short andar = LOW; // variavel para guardar se o carro estiver andando ou nao
+int pos = 0;    // variable to store the servo position
+bool dir, dir45, frent, esq45, esq = LOW; // variavel que vai guardar se o carro ja estiver virado a alguma posicao
+
+
+void setup()
+{
+  myservo.attach(5);  // attaches the servo on pin 5 to the servo object
+  Serial.begin(9600);  // We initialize serial connection so that we could print values from sensor.
+  //Define os pinos como saida
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+  initdirecao();           // Garante que a direcao sempre seja em linha reta
+  delay(1000);            // Aguarda o Sistema Inicializar
+  scan();             // Faz a leitura do local (180 graus nos dois lados)
+}
+
+void loop()
+{
+
+  while (1) {
+    AndaTras();
+  }
+  int SensR = 0;                             //Recebe a leitura do Sensor
+  SensR = distanceSensor.measureDistanceCm();
+  //Serial.println(SensR);                     //Mostra no Serial o a distancia em CM
+
+  if (SensR >= 40) {
+    andar = HIGH;             // Variavel que indica o carro a andar para frente
+    AndaFrente();
+  }
+  else {
+    Freio();
+    // scan();
+    while (SensR <= 40) {
+      andar = LOW;             // Variavel que indica o carro a andar para tras
+      AndaTras();
+      // scan();
+      delay(100);
+    }
+    Freio();
+    // scan();
+    delay(500);
+  }
+  delay(500);
+
+}
+
+//****************** O carro anda para tras ******************************
+void AndaTras() {
+  //Gira o Motor B no sentido horario
+  analogWrite(IN3, 100);
+  digitalWrite(IN4, LOW);                            //Esse valor *Deve* ser Low
+}
+//******************** Vira o carro para a Direita 180 **************************
+void ViraDireita() {
+  //Gira o Motor A no sentido horario
+  int x = 0;
+  int y = 70;
+  if (esq == HIGH) y = 140;
+  if (dir45 == HIGH) y = 35;
+  for (x = 0; x <= y; ++x) {
+    analogWrite(IN1, x);
+    digitalWrite(IN2, LOW);           // Sendo Low, ele vira para o sentido Horario
+    delay(10);
+  }
+  //Parar o motor A
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, HIGH);
+  EEPROM.write(0, 1);            // Gravo na posicao 0, o valor 1 na EEPROM
+  delay(30);
+}
+
+//************************VIRA A 45 GRAUS A DIREITA ***************************
+void viraDireita45() {
+  //Gira o Motor A no sentido horario
+  int x = 0;
+  for (x = 0; x <= 35; ++x) {
+    analogWrite(IN1, x);
+    digitalWrite(IN2, LOW);           // Sendo Low, ele vira para o sentido Horario
+    delay(10);
+  }
+  //Parar o motor A
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, HIGH);
+  EEPROM.write(0, 2);            // Gravo na posicao 0, o valor 2 na EEPROM
+  delay(30);
+}
+
+
+
+//********************** Vira o carro para a Esquerda 180 *************************
+void ViraEsquerda() {
+  //Gira o Motor A no sentido anti-horario
+  int y = 0;
+  int z = 12;
+  if ( dir == HIGH) z = 24;          // Se a direcao estiver completamente virada a DIREITA, viro 180 graus para a esquerda
+  if ( esq45 == HIGH) z = 6;
+  for (y = 0; y <= z; ++y) {
+    digitalWrite(IN1, LOW);
+    digitalWrite(IN2, HIGH);         // Sendo High, ele vira para o sentido Anti-Horario
+    delay(11);
+    digitalWrite(IN1, LOW);
+    digitalWrite(IN2, LOW);         // Sendo High, ele vira para o sentido Anti-Horario
+    delay(30);
+  }
+
+  //Para o motor A
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, HIGH);
+  EEPROM.write(0, 3);            // Gravo na posicao 0, o valor 3 na EEPROM
+  delay(30);
+}
+
+//************************VIRA A 45 GRAUS A ESQUERDA ***************************
+void viraEsquerda45() {
+  int y = 0;
+  for (y = 0; y <= 6; ++y) {
+    digitalWrite(IN1, LOW);
+    digitalWrite(IN2, HIGH);         // Sendo High, ele vira para o sentido Anti-Horario
+    delay(11);
+    digitalWrite(IN1, LOW);
+    digitalWrite(IN2, LOW);         // Sendo High, ele vira para o sentido Anti-Horario
+    delay(30);
+  }
+  //Para o motor A
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, HIGH);
+  EEPROM.write(0, 4);            // Gravo na posicao 0, o valor 4 na EEPROM
+  delay(30);
+}
+//*********************** VIRA PARA FRENTE *****************************
+void virafrente() {
+  int x = 0;
+  if (esq == HIGH) {               // Se a direcao estiver completamente virada a esquerda
+    for (x = 0; x <= 70; ++x) {    // Viro 45 graus para a direita
+      analogWrite(IN1, x);
+      digitalWrite(IN2, LOW);           // Sendo Low, ele vira para o sentido Horario
+      delay(10);
+    }
+    delay(25);
+    //Parar o motor A
+    digitalWrite(IN1, HIGH);
+    digitalWrite(IN2, HIGH);
+    delay(50);
+  }
+  //***********************************************************************************************
+  if (dir == HIGH) {                 // Se a direcao estiver completamente virada para a esquerda
+    int y = 0;
+    for (y = 0; y <= 12; ++y) {
+      digitalWrite(IN1, LOW);
+      digitalWrite(IN2, HIGH);         // Sendo High, ele vira para o sentido Anti-Horario
+      delay(11);
+      digitalWrite(IN1, LOW);
+      digitalWrite(IN2, LOW);         // Sendo High, ele vira para o sentido Anti-Horario
+      delay(30);
+    }
+
+    delay(5);
+    //Para o motor A
+    digitalWrite(IN1, HIGH);
+    digitalWrite(IN2, HIGH);
+    delay(10);
+  }
+  //***************************************************************************************************
+  if (esq45 == HIGH) {
+    viraDireita45();
+  }
+  //***************************************************************************************************
+  if (dir45 == HIGH) {
+    viraEsquerda45();
+  }
+  //***************************************************************************************************
+}
+//********************** Aceleraçao do carro ****************************
+void AndaFrente() {
+  //Gira o Motor B no sentido anti-horario
+  analogWrite(IN4, 100);                            // Ajuste de potencia para o carro andar para frente ( Sendo 255 o Max)
+  digitalWrite(IN3, LOW);
+  // digitalWrite(IN4, HIGH);
+}
+
+//********************** Freia o carro ************************************
+void Freio() {
+  if (andar == HIGH) {                              // Se o carro estiver andando para frente, inverte a rotacao por 100 miliseconds
+    analogWrite(IN3, 100);
+    digitalWrite(IN4, LOW);
+    delay(500);                                      // Define quanto tempo de freio o carro tem
+    digitalWrite(IN3, LOW);                          // Para de Acelerar
+    digitalWrite(IN4, LOW);
+  }
+  if (andar == LOW) {                              // Se o carro estiver andando para Tras, inverte a rotacao por 100 miliseconds
+    analogWrite(IN4, 100);
+    digitalWrite(IN3, LOW);
+    delay(500);
+    digitalWrite(IN3, LOW);
+    digitalWrite(IN4, LOW);
+  }
+}
+//********************* Funçao de Escaneamento *************************
+void scan() {
+  int x1, x2, x3, x4, x5, x6 = 0;
+  for (pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
+    // in steps of 1 degree
+    myservo.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(15);                       // waits 15 ms for the servo to reach the position
+    if (pos == 10) {
+      delay(100);
+      x6 = distanceSensor.measureDistanceCm();
+      x1 = x6;
+      Serial.print("X1 = ");
+      Serial.println(x6);
+    }
+    if (pos == 45) {
+      delay(100);
+      x6 = distanceSensor.measureDistanceCm();
+      x2 = x6;
+      Serial.print("X2 = ");
+      Serial.println(x6);
+    }
+    if (pos == 90) {
+      delay(100);
+      x6 = distanceSensor.measureDistanceCm();
+      x3 = x6;
+      Serial.print("X3 = ");
+      Serial.println(x6);
+    }
+    if (pos == 135) {
+      delay(100);
+      x6 = distanceSensor.measureDistanceCm();
+      x4 = x6;
+      Serial.print("X4 = ");
+      Serial.println(x6);
+    }
+    if (pos == 160) {
+      delay(100);
+      x6 = distanceSensor.measureDistanceCm();
+      x5 = x6;
+      Serial.print("X5 = ");
+      Serial.println(x6);
+    }
+
+  }
+
+  //  for (pos = 180; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
+  //    myservo.write(pos);              // tell servo to go to position in variable 'pos'
+  //    delay(15);                       // waits 15 ms for the servo to reach the position
+  //  }
+  myservo.write(85);                 // move o sensor para o centro
+
+  if (x1 > x2 && x1 > x3 && x1 > x4 && x1 > x5 && esq == LOW) {
+    Serial.println("Viro para a esquerda");
+    delay(500);
+    ViraEsquerda();
+    esq = HIGH;
+    dir = LOW;
+    dir45 = LOW;
+    esq45 = LOW;
+    frent = LOW;
+
+  }
+  if (x2 > x1 && x2 > x3 && x2 > x4 && x2 > x5 && esq45 == LOW) {
+    Serial.println("Viro 45 graus para a esquerda");
+    delay(500);
+    viraEsquerda45();
+    esq45 = HIGH;
+    esq = LOW;
+    dir = LOW;
+    dir45 = LOW;
+    frent = LOW;
+  }
+  if (x3 > x1 && x3 > x2 && x3 > x4 && x3 > x5 && frent == LOW) {
+    Serial.println("Estou a 90 graus");
+    delay(500);
+    virafrente();
+    frent = HIGH;
+    esq45 = LOW;
+    dir = LOW;
+    dir45 = LOW;
+    esq = LOW;
+  }
+  if (x4 > x1 && x4 > x2 && x4 > x3 && x4 > x5 && dir45 == LOW) {
+    Serial.println("Viro a 45 graus a direita");
+    delay(500);
+    viraDireita45();
+    dir45 = HIGH;
+    dir = LOW;
+    esq = LOW;
+    esq45 = LOW;
+    frent = LOW;
+  }
+  if (x5 > x1 && x5 > x2 && x5 > x3 && x5 > x4 && dir == LOW) {
+    Serial.println("Viro para a direita");
+    delay(500);
+    ViraDireita();
+    dir = HIGH;
+    dir45 = LOW;
+    esq = LOW;
+    esq45 = LOW;
+    frent = LOW;
+  }
+
+  delay(1000);
+  Serial.println();
+  Serial.println("****************************************************************************************");
+
+}
+
+void initdirecao() {
+  int value = 0;
+  value = EEPROM.read(0);
+  delay(30);
+  switch (value) {
+    case 1:
+      // ViraEsquerda();
+      Serial.println("a Direita!!!");
+      break;
+    case 2:
+      Serial.println("a Direita45!!!");
+      //viraEsquerda45();
+      break;
+    case 3:
+      //ViraDireita();
+      Serial.println("Esquerda!!!");
+      break;
+    case 4:
+      //viraEsquerda45();
+      Serial.println("Esquerda45!!!");
+      break;
+    default:
+      // statements
+      break;
+  }
+
+}
