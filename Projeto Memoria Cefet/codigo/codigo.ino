@@ -1,18 +1,17 @@
 #include <LiquidCrystal.h>
 
 // Definição de variáveis
-#define buz 7
-#define ledG 8
-#define ledR 9
-#define ledY 10
-#define ledB 13
-#define pushG A0
-#define pushR A1
-#define pushY A2
-#define pushB A3
+#define ledG 12
+#define ledR 10
+#define ledY 11
+#define ledB 9
+#define pushG A4
+#define pushR A2
+#define pushY A3
+#define pushB A1
 
 // Declaração das variáveis do Display LCD
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+LiquidCrystal lcd(7, 6, 5, 4, 3, 2);
 
 void setup() {
   // Declaração dos pinos usados
@@ -24,7 +23,7 @@ void setup() {
   pinMode(ledR, OUTPUT);
   pinMode(ledY, OUTPUT);
   pinMode(ledB, OUTPUT);
-  pinMode(buz, OUTPUT);
+  //pinMode(buz, OUTPUT);
 
   randomSeed(analogRead(0)); // Garante que os números serão aleatórios quando o jogo é reiniciado
 }
@@ -32,7 +31,7 @@ void setup() {
 void loop() {
   lcd.begin(16, 2);
   int inicio = 1; // Botão de iniciar
-  lcd.print("Vamos jogar?"); // Escreve no LCD
+  lcd.print("Bora Jogar? :D"); // Escreve no LCD
 
   // Inicia o jogo quando o botão do led verde for pressionado
   while(inicio!=1023){ // Como os botão estão ligados em portas analógicas, quando eles são pressionados, o valor de retorno é 1023
@@ -58,7 +57,7 @@ void loop() {
   while(acertou == 1){ // Enquanto o jogador continuar acertando...
     
     // Escreve no LCD a pontuação do jogador
-    lcd.print("Taca-lhe pau!!");
+    lcd.print("BORA ENTAO!!!");
     lcd.setCursor(0,1);
     lcd.print("Pontuacao: ");
     lcd.print(pont);
@@ -70,28 +69,28 @@ void loop() {
     for(int i = 0; i < quant; i++){ // Loop para acender a sequência de luzes uma a uma
       if(luzes[i] == 1){ // Verifica se é esta a luz que deve acender
         digitalWrite(ledG, HIGH); // Se sim, liga o led correspondente
-        tone(buz, 262, 500); // Toca o buzzer na frequência pré-determinada para essa cor
+        //tone(buz, 262, 500); // Toca o buzzer na frequência pré-determinada para essa cor
         delay(500);
         digitalWrite(ledG, LOW); // Depois de um tempo, apaga a luz
         delay(200);
       } // A mesma lógica é implementada para as demais luzes
       if(luzes[i] == 2){
         digitalWrite(ledR, HIGH);
-        tone(buz, 294, 500);
+        //tone(buz, 294, 500);
         delay(500);
         digitalWrite(ledR, LOW);
         delay(200);
       }
       if(luzes[i] == 3){
         digitalWrite(ledY, HIGH);
-        tone(buz, 330, 500);
+        //tone(buz, 330, 500);
         delay(500);
         digitalWrite(ledY, LOW);
         delay(200);
       }
       if(luzes[i] == 4){
         digitalWrite(ledB, HIGH);
-        tone(buz, 349, 500);
+        //tone(buz, 349, 500);
         delay(500);
         digitalWrite(ledB, LOW);
         delay(200);
@@ -109,7 +108,7 @@ void loop() {
 
       if(pg == 1023){ // Se o botão dessa luz for pressionado...
         digitalWrite(ledG, HIGH); // O led acende
-        tone(buz, 262, 500); // O buzzer toca
+       // tone(buz, 262, 500); // O buzzer toca
         if(luzes[aux] == 1){ // Verifica se o jogador acertou a luz correta
           aux++; // Se sim, a próxima luz é apontada
         }
@@ -123,7 +122,7 @@ void loop() {
       } // A mesma lógica é implementada para todas as luzes
       if(pr == 1023){
         digitalWrite(ledR, HIGH);
-        tone(buz, 294, 500);
+        //tone(buz, 294, 500);
         if(luzes[aux] == 2){
           aux++;
         }
@@ -137,7 +136,7 @@ void loop() {
       }
       if(py == 1023){
         digitalWrite(ledY, HIGH);
-        tone(buz, 330, 500);
+        //tone(buz, 330, 500);
         if(luzes[aux] == 3){
           aux++;
         }
@@ -151,7 +150,7 @@ void loop() {
       }
       if(pb == 1023){
         digitalWrite(ledB, HIGH);
-        tone(buz, 349, 500);
+        //tone(buz, 349, 500);
         if(luzes[aux] == 4){
           aux++;
         }
@@ -170,7 +169,7 @@ void loop() {
     }
   }
   // Se o jogador errou...
-  tone(buz, 415, 3000); // O buzzer toca numa frequência diferente das luzes
+  //tone(buz, 415, 3000); // O buzzer toca numa frequência diferente das luzes
 
   // Escreve-se no LCD que o jogador errou e sua pontuação final
   lcd.clear();
