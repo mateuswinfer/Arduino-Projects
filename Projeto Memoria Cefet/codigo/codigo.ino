@@ -9,6 +9,7 @@
 #define pushR A3
 #define pushY A2
 #define pushB A1
+#define buzz 8
 
 // Declaração das variáveis do Display LCD
 LiquidCrystal lcd(7, 6, 5, 4, 3, 2);
@@ -25,6 +26,10 @@ byte dino[8] = {
   0b00000
 };
 
+unsigned long previousMillis = 0; // Stores the last time the LED was toggled
+const long interval = 1000; // Blink interval in milliseconds (1 second)
+
+
 void setup() {
   // Declaração dos pinos usados
   pinMode(pushG, INPUT);
@@ -35,9 +40,12 @@ void setup() {
   pinMode(ledR, OUTPUT);
   pinMode(ledY, OUTPUT);
   pinMode(ledB, OUTPUT);
+  pinMode(buzz, OUTPUT);
 
   randomSeed(analogRead(0));  // Garante que os números serão aleatórios quando o jogo é reiniciado
   introducao();
+
+ 
 }
 
 void loop() {
@@ -45,45 +53,25 @@ void loop() {
   delay(1000);
 
   // Inicia o jogo quando o botão do led verde for pressionado
-  while (inicio != 1023) {       // Como os botão estão ligados em portas analógicas, quando eles são pressionados, o valor de retorno é 1023
+  while (inicio != 1023) {     // Como os botão estão ligados em portas analógicas, quando eles são pressionados, o valor de retorno é 1023
+    unsigned long currentMillis = millis();  
     inicio = analogRead(pushG);
-    lcd.clear();
-    lcd.setCursor(0, 1);
-    lcd.print("Bora Jogar? :D");  
-    digitalWrite(ledG, HIGH);    // Liga leds
-    digitalWrite(ledR, LOW);
-    digitalWrite(ledY, LOW);
-    digitalWrite(ledB, LOW);
-    delay(500);
-    digitalWrite(ledG, LOW);    // Liga leds
-    digitalWrite(ledR, HIGH);
-    digitalWrite(ledY, LOW);
-    digitalWrite(ledB, LOW);
-    delay(500);
-    digitalWrite(ledG, LOW);    // Liga leds
-    digitalWrite(ledR, LOW);
-    digitalWrite(ledY, HIGH);
-    digitalWrite(ledB, LOW);
-    delay(500);
-    digitalWrite(ledG, LOW);    // Liga leds
-    digitalWrite(ledR, LOW);
-    digitalWrite(ledY, LOW);
-    digitalWrite(ledB, HIGH);
-    delay(500);
-    lcd.clear();
-    lcd.setCursor(0, 1);
-    lcd.print("Segure Verde!");
-    digitalWrite(ledG, LOW);    // Liga leds
-    digitalWrite(ledR, LOW);
-    digitalWrite(ledY, HIGH);
-    digitalWrite(ledB, LOW);
-    delay(500);
-    digitalWrite(ledG, LOW);    // Liga leds
-    digitalWrite(ledR, HIGH);
-    digitalWrite(ledY, LOW);
-    digitalWrite(ledB, LOW);
-    delay(500);
-    
+    lcd.setCursor(0, 1); 
+    if (currentMillis - previousMillis >= interval) {
+        // If the desired interval has passed, toggle the LED
+        previousMillis = currentMillis; // Update the previous time
+        digitalWrite(ledG, !digitalRead(ledG));
+        digitalWrite(ledR, !digitalRead(ledR));
+        digitalWrite(ledY, !digitalRead(ledY));
+        digitalWrite(ledB, !digitalRead(ledB));
+        lcd.clear();
+        lcd.print("Vamos Jogar?");
+        lcd.setCursor(0,1);
+        lcd.print("Aperte o verde!");
+
+    }
+   
+
   
   }
   lcd.clear();              // Apaga LCD
@@ -230,6 +218,7 @@ void introducao() {
   for (int i = 0; i < 16; i++) {
     delay(500);
     lcd.scrollDisplayRight();
+    walking();
     lcd.setCursor(0, 0);                          // selecionando coluna 10 e linha 1
     lcd.rightToLeft();
     lcd.print(" ");
@@ -249,5 +238,14 @@ void introducao() {
   lcd.setCursor(0, 1);
   lcd.print("Marcos e Mateus");
   delay(2000);
+
   lcd.clear();
+}
+
+void walking(){
+  tone(buzz, 1000, 10000);
+  tone(buzz, 0, 10000);
+
+
+  
 }
